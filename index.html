@@ -1,63 +1,31 @@
 <!DOCTYPE html>
 <html lang="bn">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VisionLlama</title>
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VisionLlama</title></head>
 <body style="margin:0;background:#0a0a0a;color:#fff;font-family:sans-serif;text-align:center;padding:15px">
-
 <h2>👁️ VisionLlama</h2>
-<p style="color:#aaa">Llama 4 Vision + Bangla Voice</p>
-
-<input id="key" type="password" placeholder="Groq API Key বসাও" style="width:92%;padding:12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff">
-
+<input id="key" type="text" placeholder="Groq API Key এখানে বসাও gsk_..." style="width:92%;padding:12px;border-radius:8px;border:1px solid #00ff88;background:#1a1a1a;color:#fff">
 <br><br>
 <video id="v" autoplay playsinline style="width:100%;max-width:380px;border-radius:16px;border:2px solid #00ff88;background:#000;min-height:200px"></video>
-
 <br><br>
 <button onclick="start()" style="padding:14px 18px;background:#00ff88;border:none;border-radius:10px;font-weight:bold">📷 ক্যামেরা</button>
 <button onclick="see()" style="padding:14px 18px;background:#ffcc00;border:none;border-radius:10px;font-weight:bold;margin-left:8px">🧠 দেখো</button>
-
-<div id="r" style="margin-top:18px;background:#1e1e1e;padding:16px;border-radius:12px;font-size:18px;min-height:60px;text-align:left">এখানে বাংলায় বলবে...</div>
-
+<div id="r" style="margin-top:18px;background:#1e1e1e;padding:16px;border-radius:12px;font-size:18px;min-height:60px;text-align:left">নতুন Key বসিয়ে আবার ট্রাই করো...</div>
 <script>
 let s;
-async function start(){
-  s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-  document.getElementById('v').srcObject=s;
-}
+async function start(){s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});document.getElementById('v').srcObject=s;}
 async function see(){
-  const k=document.getElementById('key').value.trim();
-  if(!k){alert('Groq Key বসাও!');return}
-  const video=document.getElementById('v');
-  const canvas=document.createElement('canvas');
-  canvas.width=video.videoWidth||380;
-  canvas.height=video.videoHeight||300;
-  canvas.getContext('2d').drawImage(video,0,0);
-  const img=canvas.toDataURL('image/jpeg',0.6);
-  document.getElementById('r').innerText='⏳ Llama 4 দেখছে...';
-  try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-      body:JSON.stringify({
-        model:'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages:[{role:'user',content:[
-          {type:'text',text:'তুমি অন্ধ মানুষের সহকারী। ছবিতে কি আছে বাংলায় 2-3 লাইনে সহজ করে বলো, সামনে বিপদ থাকলে সাবধান করো।'},
-          {type:'image_url',image_url:{url:img}}
-        ]}]
-      })
-    });
-    const data=await res.json();
-    const txt=data.choices[0].message.content;
-    document.getElementById('r').innerText=txt;
-    const u=new SpeechSynthesisUtterance(txt);
-    u.lang='bn-BD';speechSynthesis.speak(u);
-  }catch(e){
-    document.getElementById('r').innerText='Error: '+e.message;
-  }
+ const k=document.getElementById('key').value.trim();
+ if(!k || !k.startsWith('gsk_')){alert('সঠিক Groq Key বসাও, gsk_ দিয়ে শুরু হবে');return}
+ const video=document.getElementById('v');
+ const canvas=document.createElement('canvas');canvas.width=video.videoWidth||480;canvas.height=video.videoHeight||360;
+ canvas.getContext('2d').drawImage(video,0,0);const img=canvas.toDataURL('image/jpeg',0.7);
+ document.getElementById('r').innerText='⏳ Llama 4 দেখছে...';
+ try{
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'meta-llama/llama-4-scout-17b-16e-instruct',messages:[{role:'user',content:[{type:'text',text:'ছবিতে কি আছে বাংলায় 2 লাইনে বলো।'}, {type:'image_url',image_url:{url:img}}]}]})});
+  const data=await res.json();
+  if(!res.ok){document.getElementById('r').innerText='Groq Error: '+(data.error?.message||JSON.stringify(data));return}
+  const txt=data.choices[0].message.content;
+  document.getElementById('r').innerText=txt;const u=new SpeechSynthesisUtterance(txt);u.lang='bn-BD';speechSynthesis.speak(u);
+ }catch(e){document.getElementById('r').innerText='Error: '+e.message;}
 }
-</script>
-</body>
-</html>
+</script></body></html>
